@@ -9,43 +9,35 @@ import (
 	"hermes/internal/exit"
 )
 
-// Global flags
-var (
-	explainFlag bool
-)
+// No global flags needed with explicit subcommands
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "hermes [natural language query]",
+	Use:   "hermes",
 	Short: "Hermes is a smart CLI assistant that translates natural language to shell commands",
 	Long: `Hermes is a terminal AI helper that translates natural language to shell commands.
-	
+
+Commands:
+  hermes gen/generate [natural language]    # Generate shell commands from natural language
+  hermes exp/explain [command]              # Explain what a shell command does
+  hermes init [shell]                       # Generate shell integration script
+
 Examples:
-  hermes list files                    # Generate command to list files
-  hermes delete old logs               # Generate command to delete old logs
-  hermes --explain ls -la              # Explain what a command does
-  hermes init zsh                      # Generate zsh integration script`,
+  hermes gen list all files                 # Generate command to list files
+  hermes generate delete old logs           # Generate command to delete old logs
+  hermes exp ls -la                         # Explain what 'ls -la' does
+  hermes explain find . -name '*.go'        # Explain a complex command
+  hermes init zsh                           # Generate zsh integration script
+
+Quick Start:
+  Add this alias to your shell config for faster access:
+  alias h='hermes gen'
+  
+  Then you can use: h list all files`,
 	
-	// This runs when no subcommand is specified (default action)
+	// Show help when no subcommand is provided
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			// If no args given, show help
-			return cmd.Help()
-		}
-
-		if explainFlag {
-			// Explain mode: join all args as the command to explain
-			command := strings.Join(args, " ")
-			fmt.Printf("Explaining command: '%s'\n", command)
-			// TODO: Implement explanation logic
-			return exit.Success()
-		}
-
-		// Default mode: generate command from natural language
-		query := strings.Join(args, " ")
-		fmt.Printf("Generating command for: '%s'\n", query)
-		// TODO: Implement core command generation logic
-		return nil
+		return cmd.Help()
 	},
 }
 
@@ -55,9 +47,6 @@ func Execute() error {
 }
 
 func init() {
-	// Global persistent flags
-	rootCmd.PersistentFlags().BoolVar(&explainFlag, "explain", false, "Explain the given command instead of generating a new one")
-	
 	// Set version - can be injected at build time
 	rootCmd.Version = "0.1.0"
 	rootCmd.SetVersionTemplate(`{{printf "%s\n" .Version}}`)
