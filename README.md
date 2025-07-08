@@ -1,1 +1,1 @@
-# Hermes -- AI assistant in your terminal
+# Hermes - AI assistant in your terminal
