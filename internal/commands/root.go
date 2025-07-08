@@ -26,7 +26,7 @@ Examples:
   hermes gen list all files                 # Generate command to list files
   hermes generate delete old logs           # Generate command to delete old logs
   hermes exp ls -la                         # Explain what 'ls -la' does
-  hermes explain find . -name '*.go'        # Explain a complex command
+  hermes explain "find . -name '*.go'"      # Explain a complex command
   hermes init zsh                           # Generate zsh integration script
 
 Quick Start:
