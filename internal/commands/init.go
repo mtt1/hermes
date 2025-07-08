@@ -14,15 +14,33 @@ var initCmd = &cobra.Command{
 	Short: "Generate shell integration script",
 	Long: `Generate shell integration script for the specified shell.
 
+This command outputs shell-specific integration code that you can evaluate
+in your shell to enable Hermes functionality. The integration includes:
+  - The hermes function that handles command generation and safety warnings
+  - Proper exit code handling for different command types
+  - Shell-specific buffer manipulation
+
 Supported shells:
   - zsh
-  - bash
+  - bash  
   - fish
 
 Examples:
-  hermes init zsh     # Generate zsh integration script
-  hermes init bash    # Generate bash integration script
-  hermes init fish    # Generate fish integration script`,
+  hermes init zsh                              # Generate zsh integration script
+  hermes init bash                             # Generate bash integration script
+  hermes init fish                             # Generate fish integration script
+
+Installation:
+  Add to your shell config file:
+  
+  # For zsh (~/.zshrc):
+  eval "$(hermes init zsh)"
+  
+  # For bash (~/.bashrc):
+  eval "$(hermes init bash)"
+  
+  # For fish (~/.config/fish/config.fish):
+  hermes init fish | source`,
 	
 	Args: cobra.ExactArgs(1), // Require exactly one argument (shell name)
 	RunE: func(cmd *cobra.Command, args []string) error {
