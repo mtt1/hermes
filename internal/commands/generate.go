@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"hermes/internal/ai"
 	"hermes/internal/exit"
 	"hermes/internal/safety"
 )
@@ -61,16 +62,43 @@ Then you can use: h list all files`,
 			}
 		}
 		
-		// TODO: Phase 2 - Implement AI command generation
-		// For now, simulate generated command
-		var generatedCommand string
+		// Create AI client
+		var aiClient ai.Client
+		var err error
+		
 		if appCtx.Config.MockResponse != "" {
-			generatedCommand = appCtx.Config.MockResponse
+			// Use mock client when mock response is provided
+			aiClient, err = ai.NewClient("mock", ai.Config{
+				APIKey: "mock-key",
+				Debug:  appCtx.Config.Debug,
+			})
 		} else {
-			generatedCommand = "echo 'AI generation not yet implemented'"
+			// Use Gemini client (placeholder for now)
+			aiClient, err = ai.NewClient("gemini", ai.Config{
+				APIKey: appCtx.Config.GeminiAPIKey,
+				Debug:  appCtx.Config.Debug,
+			})
 		}
 		
-		// Analyze safety of generated command
+		if err != nil {
+			return exit.NewError(exit.CodeError, "Failed to create AI client: %v", err)
+		}
+		defer aiClient.Close()
+		
+		// Generate command using AI
+		ctx := context.Background()
+		response, err := aiClient.GenerateCommand(ctx, ai.GenerateRequest{
+			Query: query,
+		})
+		
+		if err != nil {
+			return exit.NewError(exit.CodeAPI, "AI command generation failed: %v", err)
+		}
+		
+		generatedCommand := response.Command
+		aiSafetyLevel := response.SafetyLevel
+		
+		// Analyze safety of generated command (hybrid approach)
 		analyzer := safety.NewAnalyzer()
 		var safetyResult safety.Result
 		
@@ -78,13 +106,29 @@ Then you can use: h list all files`,
 			// Use mock exit code for testing
 			safetyResult = analyzer.MockAnalyzeCommand(generatedCommand, appCtx.Config.MockExitCode)
 		} else {
-			// Use real safety analysis
+			// Use hybrid safety analysis (AI assessment + pattern matching)
 			ctx := context.Background()
 			result, err := analyzer.AnalyzeCommand(ctx, generatedCommand)
 			if err != nil {
 				return exit.NewError(exit.CodeError, "Safety analysis failed: %v", err)
 			}
-			safetyResult = result
+			
+			// Apply upgrade-only logic: if patterns detected something requiring attention,
+			// upgrade the AI's assessment
+			if result.Level == safety.Attention {
+				safetyResult = result
+			} else {
+				// AI detected attention but patterns say safe - use AI's assessment
+				if aiSafetyLevel == safety.Attention {
+					safetyResult = safety.Result{
+						Level:  safety.Attention,
+						Reason: "AI flagged as requiring attention",
+						Layer:  "ai-assessment",
+					}
+				} else {
+					safetyResult = result
+				}
+			}
 		}
 		
 		if appCtx.Config.Debug {
