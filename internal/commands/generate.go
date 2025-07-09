@@ -18,6 +18,11 @@ var generateCmd = &cobra.Command{
 This is the primary function of Hermes. Describe what you want to do in natural
 language, and Hermes will generate the appropriate shell command.
 
+Usage:
+  hermes gen list all files                    # Natural language expressions
+  hermes gen "init git repo"                   # Use quotes to enclose expressions for disambiguation
+  hermes gen -- init git repo                  # Use delimiter to separate expressions for disambiguation
+
 Examples:
   hermes gen list all files                    # Generate command to list files
   hermes generate delete old log files         # Generate command to delete old logs
@@ -43,7 +48,12 @@ Then you can use: h list all files`,
 		fmt.Printf("Generating command for: '%s'\n", query)
 		
 		if appCtx.Config.Debug {
-			fmt.Printf("DEBUG: Using API key: %s\n", appCtx.Config.GeminiAPIKey)
+			apiKey := appCtx.Config.GeminiAPIKey
+			if len(apiKey) > 4 {
+				fmt.Printf("DEBUG: Using API key ending in ...%s\n", apiKey[len(apiKey)-4:])
+			} else {
+				fmt.Printf("DEBUG: Using API key ending in ...%s\n", apiKey[len(apiKey)-1:])
+			}
 		}
 		
 		// TODO: Implement core command generation logic
