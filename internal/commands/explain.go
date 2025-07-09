@@ -27,7 +27,9 @@ Examples:
 Note: You can use quotes around the command if it contains special characters
 or you want to be explicit about the command boundaries.`,
 
-	Args: cobra.MinimumNArgs(1), // Require at least one argument
+	// Disable flag parsing so command arguments like -la are passed through
+	DisableFlagParsing: true,
+	Args:               cobra.MinimumNArgs(1), // Require at least one argument
 	RunE: func(cmd *cobra.Command, args []string) error {
 		command := strings.Join(args, " ")
 		fmt.Printf("Explaining command: '%s'\n", command)

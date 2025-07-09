@@ -2,11 +2,7 @@
 package commands
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/spf13/cobra"
-	"hermes/internal/exit"
 )
 
 // No global flags needed with explicit subcommands
