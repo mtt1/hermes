@@ -96,9 +96,15 @@ func loadConfig(cmd *cobra.Command) error {
 		return fmt.Errorf("failed to load flags: %w", err)
 	}
 	
-	// Map CLI flag to config key (--gemini-api-key -> gemini_api_key)
+	// Map CLI flags to config keys
 	if flagValue, _ := cmd.Flags().GetString("gemini-api-key"); flagValue != "" {
 		config.K.Set("gemini_api_key", flagValue)
+	}
+	if flagValue, _ := cmd.Flags().GetString("mock-response"); flagValue != "" {
+		config.K.Set("mock_response", flagValue)
+	}
+	if flagValue, _ := cmd.Flags().GetInt("mock-exit-code"); flagValue != 0 {
+		config.K.Set("mock_exit_code", flagValue)
 	}
 
 	// 4. Unmarshal all configuration into the Config struct
@@ -117,4 +123,6 @@ func init() {
 	// Add global flags
 	rootCmd.PersistentFlags().String("gemini-api-key", "", "Gemini API key for AI command generation and explanation")
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug output")
+	rootCmd.PersistentFlags().String("mock-response", "", "Mock AI response for testing (bypasses API call)")
+	rootCmd.PersistentFlags().Int("mock-exit-code", 0, "Mock exit code for testing (0=safe, 10=dangerous, 11=sudo)")
 }

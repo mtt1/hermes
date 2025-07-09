@@ -2,10 +2,13 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"hermes/internal/exit"
+	"hermes/internal/safety"
 )
 
 // generateCmd represents the generate command
@@ -36,8 +39,8 @@ Then you can use: h list all files`,
 
 	Args: cobra.MinimumNArgs(1), // Require at least one argument
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Validate API key is available
-		if appCtx.Config.GeminiAPIKey == "" {
+		// Validate API key is available (unless using mock)
+		if appCtx.Config.GeminiAPIKey == "" && appCtx.Config.MockResponse == "" {
 			return fmt.Errorf("Gemini API key is required. Set it via:\n" +
 				"  - Environment variable: GEMINI_API_KEY\n" +
 				"  - CLI flag: --gemini-api-key\n" +
@@ -49,14 +52,56 @@ Then you can use: h list all files`,
 		
 		if appCtx.Config.Debug {
 			apiKey := appCtx.Config.GeminiAPIKey
-			if len(apiKey) > 4 {
+			if apiKey == "" {
+				fmt.Printf("DEBUG: No API key (using mock)\n")
+			} else if len(apiKey) > 4 {
 				fmt.Printf("DEBUG: Using API key ending in ...%s\n", apiKey[len(apiKey)-4:])
 			} else {
-				fmt.Printf("DEBUG: Using API key ending in ...%s\n", apiKey[len(apiKey)-1:])
+				fmt.Printf("DEBUG: Using API key (too short to truncate)\n")
 			}
 		}
 		
-		// TODO: Implement core command generation logic
+		// TODO: Phase 2 - Implement AI command generation
+		// For now, simulate generated command
+		var generatedCommand string
+		if appCtx.Config.MockResponse != "" {
+			generatedCommand = appCtx.Config.MockResponse
+		} else {
+			generatedCommand = "echo 'AI generation not yet implemented'"
+		}
+		
+		// Analyze safety of generated command
+		analyzer := safety.NewAnalyzer()
+		var safetyResult safety.Result
+		
+		if appCtx.Config.MockExitCode != 0 {
+			// Use mock exit code for testing
+			safetyResult = analyzer.MockAnalyzeCommand(generatedCommand, appCtx.Config.MockExitCode)
+		} else {
+			// Use real safety analysis
+			ctx := context.Background()
+			result, err := analyzer.AnalyzeCommand(ctx, generatedCommand)
+			if err != nil {
+				return exit.NewError(exit.CodeError, "Safety analysis failed: %v", err)
+			}
+			safetyResult = result
+		}
+		
+		if appCtx.Config.Debug {
+			fmt.Printf("DEBUG: Generated command: %s\n", generatedCommand)
+			fmt.Printf("DEBUG: Safety analysis: %s (reason: %s, layer: %s)\n", 
+				safetyResult.Level, safetyResult.Reason, safetyResult.Layer)
+		}
+		
+		// Output the generated command
+		fmt.Printf("Generated command: %s\n", generatedCommand)
+		fmt.Printf("Safety level: %s\n", safetyResult.Level)
+		
+		// Return appropriate exit code
+		if safetyResult.Level.ExitCode() != exit.CodeSuccess {
+			return exit.NewError(safetyResult.Level.ExitCode(), "Command safety level: %s", safetyResult.Level)
+		}
+		
 		return nil
 	},
 }

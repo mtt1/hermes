@@ -34,6 +34,5 @@ const (
 	CodeInvalid   = 2  // Invalid input
 	CodeNetwork   = 3  // Network error
 	CodeAPI       = 4  // API error
-	CodeDangerous = 10 // Dangerous command
-	CodeSudo      = 11 // Requires sudo
+	CodeDangerous = 10 // Requires attention (dangerous, sudo, etc.)
 )
