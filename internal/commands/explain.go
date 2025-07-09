@@ -2,10 +2,13 @@
 package commands
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"hermes/internal/ai"
+	"hermes/internal/exit"
 )
 
 // explainCmd represents the explain command
@@ -39,8 +42,8 @@ explicit about the command boundaries.`,
 	},
 	Args:               cobra.MinimumNArgs(1), // Require at least one argument
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Validate API key is available
-		if appCtx.Config.GeminiAPIKey == "" {
+		// Validate API key is available (unless using mock)
+		if appCtx.Config.GeminiAPIKey == "" && appCtx.Config.MockResponse == "" {
 			return fmt.Errorf("Gemini API key is required. Set it via:\n" +
 				"  - Environment variable: GEMINI_API_KEY\n" +
 				"  - CLI flag: --gemini-api-key\n" +
@@ -51,15 +54,52 @@ explicit about the command boundaries.`,
 		fmt.Printf("Explaining command: '%s'\n", command)
 		
 		if appCtx.Config.Debug {
-            apiKey := appCtx.Config.GeminiAPIKey
-            if len(apiKey) > 4 {
-                fmt.Printf("DEBUG: Using API key ending in ...%s\n", apiKey[len(apiKey)-4:])
-            } else {
-                fmt.Printf("DEBUG: Using API key (too short to truncate).\n")
-            }
-        }
+			apiKey := appCtx.Config.GeminiAPIKey
+			if apiKey == "" {
+				fmt.Printf("DEBUG: No API key (using mock)\n")
+			} else if len(apiKey) > 4 {
+				fmt.Printf("DEBUG: Using API key ending in ...%s\n", apiKey[len(apiKey)-4:])
+			} else {
+				fmt.Printf("DEBUG: Using API key (too short to truncate)\n")
+			}
+		}
 		
-		// TODO: Implement explanation logic
+		// Create AI client
+		var aiClient ai.Client
+		var err error
+		
+		if appCtx.Config.MockResponse != "" {
+			// Use mock client when mock response is provided
+			aiClient, err = ai.NewClient("mock", ai.Config{
+				APIKey: "mock-key",
+				Debug:  appCtx.Config.Debug,
+			})
+		} else {
+			// Use Gemini client
+			aiClient, err = ai.NewClient("gemini", ai.Config{
+				APIKey: appCtx.Config.GeminiAPIKey,
+				Debug:  appCtx.Config.Debug,
+			})
+		}
+		
+		if err != nil {
+			return exit.NewError(exit.CodeError, "Failed to create AI client: %v", err)
+		}
+		defer aiClient.Close()
+		
+		// Explain command using AI
+		ctx := context.Background()
+		response, err := aiClient.ExplainCommand(ctx, ai.ExplainRequest{
+			Command: command,
+		})
+		
+		if err != nil {
+			return exit.NewError(exit.CodeAPI, "AI command explanation failed: %v", err)
+		}
+		
+		// Output the explanation
+		fmt.Printf("Command explanation:\n%s", response.Explanation)
+		
 		return nil
 	},
 }
