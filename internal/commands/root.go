@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 
 	"github.com/knadh/koanf/parsers/toml/v2"
-	"github.com/knadh/koanf/providers/env/v2"
 	"github.com/knadh/koanf/providers/file"
 	"github.com/knadh/koanf/providers/posflag"
 	"github.com/spf13/cobra"
@@ -51,7 +50,7 @@ Configuration:
 	
 	// Load configuration before any command runs
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		return loadConfig()
+		return loadConfig(cmd)
 	},
 	
 	// Show help when no subcommand is provided
@@ -68,7 +67,7 @@ func Execute() error {
 	return rootCmd.Execute()
 }
 
-func loadConfig() error {
+func loadConfig(cmd *cobra.Command) error {
 	// Initialize app context
 	appCtx = &AppContext{
 		Config: config.Default(),
@@ -86,20 +85,20 @@ func loadConfig() error {
 		}
 	}
 
-	// 2. Load environment variables (higher priority)
-	if err := config.K.Load(env.Provider("GEMINI_", "_", func(s string, v string) (string, interface{}) {
-		// Map GEMINI_API_KEY to gemini_api_key
-		if s == "GEMINI_API_KEY" {
-			return "gemini_api_key", v
-		}
-		return s, v
-	}), nil); err != nil {
-		return fmt.Errorf("failed to load environment variables: %w", err)
+	// 2. Load environment variables (higher priority) 
+	// Check for GEMINI_API_KEY and map it to gemini_api_key
+	if geminiKey := os.Getenv("GEMINI_API_KEY"); geminiKey != "" {
+		config.K.Set("gemini_api_key", geminiKey)
 	}
 
 	// 3. Load CLI flags (highest priority)
-	if err := config.K.Load(posflag.Provider(rootCmd.Flags(), ".", config.K), nil); err != nil {
+	if err := config.K.Load(posflag.Provider(cmd.Flags(), ".", config.K), nil); err != nil {
 		return fmt.Errorf("failed to load flags: %w", err)
+	}
+	
+	// Map CLI flag to config key (--gemini-api-key -> gemini_api_key)
+	if flagValue, _ := cmd.Flags().GetString("gemini-api-key"); flagValue != "" {
+		config.K.Set("gemini_api_key", flagValue)
 	}
 
 	// 4. Unmarshal all configuration into the Config struct
@@ -117,4 +116,5 @@ func init() {
 
 	// Add global flags
 	rootCmd.PersistentFlags().String("gemini-api-key", "", "Gemini API key for AI command generation and explanation")
+	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug output")
 }

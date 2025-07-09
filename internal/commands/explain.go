@@ -27,12 +27,27 @@ Examples:
 Note: You can use quotes around the command if it contains special characters
 or you want to be explicit about the command boundaries.`,
 
-	// Disable flag parsing so command arguments like -la are passed through
-	DisableFlagParsing: true,
+	// Allow unknown flags to be passed through as arguments
+	FParseErrWhitelist: cobra.FParseErrWhitelist{
+		UnknownFlags: true,
+	},
 	Args:               cobra.MinimumNArgs(1), // Require at least one argument
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Validate API key is available
+		if appCtx.Config.GeminiAPIKey == "" {
+			return fmt.Errorf("Gemini API key is required. Set it via:\n" +
+				"  - Environment variable: GEMINI_API_KEY\n" +
+				"  - CLI flag: --gemini-api-key\n" +
+				"  - Config file: ~/.config/hermes/config.toml")
+		}
+
 		command := strings.Join(args, " ")
 		fmt.Printf("Explaining command: '%s'\n", command)
+		
+		if appCtx.Config.Debug {
+			fmt.Printf("DEBUG: Using API key: %s\n", appCtx.Config.GeminiAPIKey)
+		}
+		
 		// TODO: Implement explanation logic
 		return nil
 	},

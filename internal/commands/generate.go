@@ -31,8 +31,21 @@ Then you can use: h list all files`,
 
 	Args: cobra.MinimumNArgs(1), // Require at least one argument
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Validate API key is available
+		if appCtx.Config.GeminiAPIKey == "" {
+			return fmt.Errorf("Gemini API key is required. Set it via:\n" +
+				"  - Environment variable: GEMINI_API_KEY\n" +
+				"  - CLI flag: --gemini-api-key\n" +
+				"  - Config file: ~/.config/hermes/config.toml")
+		}
+
 		query := strings.Join(args, " ")
 		fmt.Printf("Generating command for: '%s'\n", query)
+		
+		if appCtx.Config.Debug {
+			fmt.Printf("DEBUG: Using API key: %s\n", appCtx.Config.GeminiAPIKey)
+		}
+		
 		// TODO: Implement core command generation logic
 		return nil
 	},
