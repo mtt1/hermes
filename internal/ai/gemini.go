@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"google.golang.org/genai"
 	"hermes/internal/safety"
@@ -54,7 +55,7 @@ func (g *GeminiClient) GenerateCommand(ctx context.Context, req GenerateRequest)
 	prompt := g.buildGeneratePrompt(req.Query)
 	
 	// Select model - use Flash for speed, Pro for quality
-	modelName := "gemini-2.0-flash"
+	modelName := "gemini-2.5-flash"
 	if g.config.Model != "" {
 		modelName = g.config.Model
 	}
@@ -78,7 +79,7 @@ func (g *GeminiClient) ExplainCommand(ctx context.Context, req ExplainRequest) (
 	prompt := g.buildExplainPrompt(req.Command)
 	
 	// Select model - use Flash for speed, Pro for quality
-	modelName := "gemini-2.0-flash"
+	modelName := "gemini-2.5-flash"
 	if g.config.Model != "" {
 		modelName = g.config.Model
 	}
@@ -107,6 +108,8 @@ func (g *GeminiClient) Close() error {
 func (g *GeminiClient) buildGeneratePrompt(query string) string {
 	return fmt.Sprintf(`You are an expert system administrator that translates natural language queries into shell commands.
 
+CRITICAL: Your response MUST be ONLY a valid JSON object. Do NOT wrap it in markdown code blocks. Do NOT add any text before or after the JSON.
+
 Your response MUST be a valid JSON object with exactly this schema:
 {
   "command": "<the generated shell command>",
@@ -123,6 +126,7 @@ Important Rules:
 2. Commands should be compatible with bash/zsh
 3. Use standard Unix utilities when possible
 4. Be conservative with safety assessment - prefer ATTENTION when uncertain
+5. RESPOND WITH ONLY JSON - NO MARKDOWN, NO BACKTICKS, NO EXTRA TEXT
 
 User Query: %s`, query)
 }
@@ -130,6 +134,8 @@ User Query: %s`, query)
 // buildExplainPrompt creates the prompt for command explanation
 func (g *GeminiClient) buildExplainPrompt(command string) string {
 	return fmt.Sprintf(`You are an expert system administrator. Explain this shell command in a structured, educational format.
+
+CRITICAL: Your response MUST be ONLY a valid JSON object. Do NOT wrap it in markdown code blocks. Do NOT add any text before or after the JSON.
 
 Your response MUST be a valid JSON object with exactly this schema:
 {
@@ -147,12 +153,27 @@ Structure Guidelines:
 - Put flag/option explanations in "details" array
 - For piped commands, separate each part into different objects
 - Use clear, educational language
+- RESPOND WITH ONLY JSON - NO MARKDOWN, NO BACKTICKS, NO EXTRA TEXT
 
 Command to explain: %s`, command)
 }
 
 // parseGenerateResponse parses the JSON response from the generate API
 func (g *GeminiClient) parseGenerateResponse(resp *genai.GenerateContentResponse) (*GenerateResponse, error) {
+	// Debug output if enabled - show complete response structure
+	if g.config.Debug {
+		fmt.Printf("DEBUG: === FULL API RESPONSE STRUCTURE ===\n")
+		fmt.Printf("DEBUG: Number of candidates: %d\n", len(resp.Candidates))
+		for i, candidate := range resp.Candidates {
+			fmt.Printf("DEBUG: Candidate %d:\n", i)
+			fmt.Printf("DEBUG:   Number of parts: %d\n", len(candidate.Content.Parts))
+			for j, part := range candidate.Content.Parts {
+				fmt.Printf("DEBUG:   Part %d text: %q\n", j, part.Text)
+			}
+		}
+		fmt.Printf("DEBUG: === END API RESPONSE STRUCTURE ===\n")
+	}
+
 	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
 		return nil, fmt.Errorf("no content returned from API")
 	}
@@ -163,8 +184,21 @@ func (g *GeminiClient) parseGenerateResponse(resp *genai.GenerateContentResponse
 		return nil, fmt.Errorf("empty response text")
 	}
 
+	if g.config.Debug {
+		fmt.Printf("DEBUG: jsonText we're trying to parse:\n%s\n", jsonText)
+		fmt.Printf("DEBUG: === END jsonText ===\n")
+	}
+
+	// Clean up the response - remove markdown code blocks if present
+	cleanedJSON := cleanJSONResponse(jsonText)
+	
+	if g.config.Debug {
+		fmt.Printf("DEBUG: cleanedJSON after removing markdown:\n%s\n", cleanedJSON)
+		fmt.Printf("DEBUG: === END cleanedJSON ===\n")
+	}
+
 	var geminiResp geminiResponse
-	if err := json.Unmarshal([]byte(jsonText), &geminiResp); err != nil {
+	if err := json.Unmarshal([]byte(cleanedJSON), &geminiResp); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
@@ -188,6 +222,20 @@ func (g *GeminiClient) parseGenerateResponse(resp *genai.GenerateContentResponse
 
 // parseExplainResponse parses the JSON response from the explain API
 func (g *GeminiClient) parseExplainResponse(resp *genai.GenerateContentResponse) (*ExplainResponse, error) {
+	// Debug output if enabled - show complete response structure
+	if g.config.Debug {
+		fmt.Printf("DEBUG: === FULL API RESPONSE STRUCTURE ===\n")
+		fmt.Printf("DEBUG: Number of candidates: %d\n", len(resp.Candidates))
+		for i, candidate := range resp.Candidates {
+			fmt.Printf("DEBUG: Candidate %d:\n", i)
+			fmt.Printf("DEBUG:   Number of parts: %d\n", len(candidate.Content.Parts))
+			for j, part := range candidate.Content.Parts {
+				fmt.Printf("DEBUG:   Part %d text: %q\n", j, part.Text)
+			}
+		}
+		fmt.Printf("DEBUG: === END API RESPONSE STRUCTURE ===\n")
+	}
+
 	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
 		return nil, fmt.Errorf("no content returned from API")
 	}
@@ -197,11 +245,24 @@ func (g *GeminiClient) parseExplainResponse(resp *genai.GenerateContentResponse)
 		return nil, fmt.Errorf("empty response text")
 	}
 
+	if g.config.Debug {
+		fmt.Printf("DEBUG: jsonText we're trying to parse:\n%s\n", jsonText)
+		fmt.Printf("DEBUG: === END jsonText ===\n")
+	}
+
+	// Clean up the response - remove markdown code blocks if present
+	cleanedJSON := cleanJSONResponse(jsonText)
+	
+	if g.config.Debug {
+		fmt.Printf("DEBUG: cleanedJSON after removing markdown:\n%s\n", cleanedJSON)
+		fmt.Printf("DEBUG: === END cleanedJSON ===\n")
+	}
+
 	var explainResp struct {
 		Explanation []ExplanationSection `json:"explanation"`
 	}
 	
-	if err := json.Unmarshal([]byte(jsonText), &explainResp); err != nil {
+	if err := json.Unmarshal([]byte(cleanedJSON), &explainResp); err != nil {
 		return nil, fmt.Errorf("failed to parse JSON response: %w", err)
 	}
 
@@ -225,4 +286,30 @@ func (g *GeminiClient) formatExplanation(sections []ExplanationSection) string {
 	}
 	
 	return result
+}
+
+// cleanJSONResponse removes markdown code block formatting from API responses
+func cleanJSONResponse(text string) string {
+	// Remove markdown code blocks (```json ... ``` or ``` ... ```)
+	text = strings.TrimSpace(text)
+	
+	// Check for and remove ```json prefix
+	if strings.HasPrefix(text, "```json") {
+		text = strings.TrimPrefix(text, "```json")
+		text = strings.TrimSpace(text)
+	}
+	
+	// Check for and remove ``` prefix (without json)
+	if strings.HasPrefix(text, "```") {
+		text = strings.TrimPrefix(text, "```")
+		text = strings.TrimSpace(text)
+	}
+	
+	// Check for and remove ``` suffix
+	if strings.HasSuffix(text, "```") {
+		text = strings.TrimSuffix(text, "```")
+		text = strings.TrimSpace(text)
+	}
+	
+	return text
 }

@@ -124,5 +124,5 @@ func init() {
 	rootCmd.PersistentFlags().String("gemini-api-key", "", "Gemini API key for AI command generation and explanation")
 	rootCmd.PersistentFlags().Bool("debug", false, "Enable debug output")
 	rootCmd.PersistentFlags().String("mock-response", "", "Mock AI response for testing (bypasses API call)")
-	rootCmd.PersistentFlags().Int("mock-exit-code", 0, "Mock exit code for testing (0=safe, 10=dangerous, 11=sudo)")
+	rootCmd.PersistentFlags().Int("mock-exit-code", 0, "Mock exit code for testing (0=safe, 10=attention)")
 }
