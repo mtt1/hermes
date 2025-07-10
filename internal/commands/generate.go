@@ -134,7 +134,8 @@ Then you can use: h list all files`,
 		
 		// Return appropriate exit code
 		if safetyResult.Level.ExitCode() != exit.CodeSuccess {
-			return exit.NewError(safetyResult.Level.ExitCode(), "Command safety level: %s", safetyResult.Level)
+			// Exit with the safety level code - let shell integration handle user messaging
+			os.Exit(safetyResult.Level.ExitCode())
 		}
 		
 		return nil

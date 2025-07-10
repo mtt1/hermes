@@ -104,8 +104,7 @@ hermes() {
         10)
             # Requires attention - show warning above prompt
             echo ""
-            echo "⚠️  REQUIRES ATTENTION - Review before execution"
-            echo "Generated command: $output"
+            echo "⚠️  REQUIRES ATTENTION - Potentially destructive action ahead, review before execution"
             echo ""
             print -z "$output"
             ;;
