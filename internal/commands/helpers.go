@@ -84,10 +84,10 @@ func checkShellIntegration() {
 	switch shellName {
 	case "zsh":
 		// Show integration hint for supported shell
-		fmt.Printf("\n  TIP: Enable shell integration for the best experience!\n")
-		fmt.Printf("   Run: hermes init zsh >> ~/.zshrc && source ~/.zshrc\n")
-		fmt.Printf("   This allows hermes to put commands directly in your shell buffer.\n")
-		fmt.Printf("   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
+		fmt.Fprintf(os.Stderr, "\n  TIP: Enable shell integration for the best experience!\n")
+		fmt.Fprintf(os.Stderr, "   Run: hermes init zsh >> ~/.zshrc && source ~/.zshrc\n")
+		fmt.Fprintf(os.Stderr, "   This allows hermes to put commands directly in your shell buffer.\n")
+		fmt.Fprintf(os.Stderr, "   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
 	default:
 		// For unsupported shells, show no tip (future expansion point)
 		return
