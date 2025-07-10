@@ -8,7 +8,6 @@ import (
 
 	"github.com/knadh/koanf/parsers/toml/v2"
 	"github.com/knadh/koanf/providers/file"
-	"github.com/knadh/koanf/providers/posflag"
 	"github.com/spf13/cobra"
 	"hermes/internal/config"
 )
@@ -91,12 +90,9 @@ func loadConfig(cmd *cobra.Command) error {
 		config.K.Set("gemini_api_key", geminiKey)
 	}
 
-	// 3. Load CLI flags (highest priority)
-	if err := config.K.Load(posflag.Provider(cmd.Flags(), ".", config.K), nil); err != nil {
-		return fmt.Errorf("failed to load flags: %w", err)
-	}
-	
-	// Map CLI flags to config keys
+	// 3. Load CLI flags (highest priority) by manually mapping them.
+	// This is explicit and avoids confusion from automatic providers when
+	// flag names (kebab-case) differ from config keys (snake_case).
 	if flagValue, _ := cmd.Flags().GetString("gemini-api-key"); flagValue != "" {
 		config.K.Set("gemini_api_key", flagValue)
 	}
@@ -105,6 +101,9 @@ func loadConfig(cmd *cobra.Command) error {
 	}
 	if flagValue, _ := cmd.Flags().GetInt("mock-exit-code"); flagValue != 0 {
 		config.K.Set("mock_exit_code", flagValue)
+	}
+	if flagValue, _ := cmd.Flags().GetBool("debug"); flagValue {
+		config.K.Set("debug", flagValue)
 	}
 
 	// 4. Unmarshal all configuration into the Config struct

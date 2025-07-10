@@ -2,10 +2,8 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -42,31 +40,12 @@ Then you can use: h list all files`,
 
 	Args: cobra.MinimumNArgs(1), // Require at least one argument
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Validate API key is available (unless using mock)
-		if appCtx.Config.GeminiAPIKey == "" && appCtx.Config.MockResponse == "" {
-			return fmt.Errorf("Gemini API key is required. Set it via:\n" +
-				"  - Environment variable: GEMINI_API_KEY\n" +
-				"  - CLI flag: --gemini-api-key\n" +
-				"  - Config file: ~/.config/hermes/config.toml")
-		}
-
 		query := strings.Join(args, " ")
 		
 		// Show immediate feedback about what we're processing (to stderr)
 		fmt.Fprintf(os.Stderr, "└─ Generating command for: '%s'\n", query)
 		
-		if appCtx.Config.Debug {
-			apiKey := appCtx.Config.GeminiAPIKey
-			if apiKey == "" {
-				fmt.Printf("DEBUG: No API key (using mock)\n")
-			} else if len(apiKey) > 4 {
-				fmt.Printf("DEBUG: Using API key ending in ...%s\n", apiKey[len(apiKey)-4:])
-			} else {
-				fmt.Printf("DEBUG: Using API key (too short to truncate)\n")
-			}
-		}
-		
-		// Create AI client
+		// Create AI client (handles validation and debug logging)
 		aiClient, err := createAIClient(&appCtx.Config)
 		if err != nil {
 			return err
@@ -74,7 +53,7 @@ Then you can use: h list all files`,
 		defer aiClient.Close()
 		
 		// Generate command using AI
-		ctx := context.Background()
+		ctx := cmd.Context()
 		response, err := aiClient.GenerateCommand(ctx, ai.GenerateRequest{
 			Query: query,
 		})
@@ -95,7 +74,7 @@ Then you can use: h list all files`,
 			safetyResult = analyzer.MockAnalyzeCommand(generatedCommand, appCtx.Config.MockExitCode)
 		} else {
 			// Use hybrid safety analysis (AI assessment + pattern matching)
-			ctx := context.Background()
+			ctx := cmd.Context()
 			result, err := analyzer.AnalyzeCommand(ctx, generatedCommand)
 			if err != nil {
 				return exit.NewError(exit.CodeError, "Safety analysis failed: %v", err)
@@ -134,46 +113,14 @@ Then you can use: h list all files`,
 		
 		// Return appropriate exit code
 		if safetyResult.Level.ExitCode() != exit.CodeSuccess {
-			// Exit with the safety level code - let shell integration handle user messaging
-			os.Exit(safetyResult.Level.ExitCode())
+			// Return a structured error with the safety code. The empty message is
+			// intentional, as the exit code itself is the signal for shell integration,
+			// and we don't want to print an error message to stderr in this case.
+			return exit.NewError(safetyResult.Level.ExitCode(), "")
 		}
 		
 		return nil
 	},
-}
-
-// checkShellIntegration detects if hermes shell integration is active and warns if not
-func checkShellIntegration() {
-	// Check if we're running from the hermes shell function
-	// The shell function sets HERMES_SHELL_INTEGRATION=1 when calling hermes
-	if os.Getenv("HERMES_SHELL_INTEGRATION") == "1" {
-		return // Shell integration is active
-	}
-	
-	// Check if user wants to suppress the tip
-	if os.Getenv("HERMES_SUPPRESS_INTEGRATION_TIP") == "1" {
-		return // User has chosen to suppress the tip
-	}
-	
-	// Check if we're in an interactive shell that could benefit from integration
-	shellPath := os.Getenv("SHELL")
-	if shellPath == "" {
-		return // No shell detected, probably running in a script
-	}
-	
-	// Only show tip for shells we actually support
-	shellName := filepath.Base(shellPath)
-	switch shellName {
-	case "zsh":
-		// Show integration hint for supported shell
-		fmt.Printf("\n💡 TIP: Enable shell integration for the best experience!\n")
-		fmt.Printf("   Run: hermes init zsh >> ~/.zshrc && source ~/.zshrc\n")
-		fmt.Printf("   This allows hermes to put commands directly in your shell buffer.\n")
-		fmt.Printf("   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
-	default:
-		// For unsupported shells, show no tip (future expansion point)
-		return
-	}
 }
 
 func init() {

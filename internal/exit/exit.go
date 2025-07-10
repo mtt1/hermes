@@ -31,5 +31,6 @@ func NewError(code int, format string, a ...interface{}) Error {
 const (
 	CodeSuccess   = 0  // Safe command
 	CodeError     = 1  // Generic error
+	CodeConfig    = 2  // Configuration error (missing API key, etc.)
 	CodeDangerous = 10 // Requires attention (dangerous, sudo, etc.)
 )

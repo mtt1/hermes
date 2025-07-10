@@ -2,7 +2,6 @@
 package commands
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -42,29 +41,10 @@ explicit about the command boundaries.`,
 	},
 	Args:               cobra.MinimumNArgs(1), // Require at least one argument
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Validate API key is available (unless using mock)
-		if appCtx.Config.GeminiAPIKey == "" && appCtx.Config.MockResponse == "" {
-			return fmt.Errorf("Gemini API key is required. Set it via:\n" +
-				"  - Environment variable: GEMINI_API_KEY\n" +
-				"  - CLI flag: --gemini-api-key\n" +
-				"  - Config file: ~/.config/hermes/config.toml")
-		}
-
 		command := strings.Join(args, " ")
 		fmt.Printf("Explaining command: '%s'\n", command)
 		
-		if appCtx.Config.Debug {
-			apiKey := appCtx.Config.GeminiAPIKey
-			if apiKey == "" {
-				fmt.Printf("DEBUG: No API key (using mock)\n")
-			} else if len(apiKey) > 4 {
-				fmt.Printf("DEBUG: Using API key ending in ...%s\n", apiKey[len(apiKey)-4:])
-			} else {
-				fmt.Printf("DEBUG: Using API key (too short to truncate)\n")
-			}
-		}
-		
-		// Create AI client
+		// Create AI client (handles validation and debug logging)
 		aiClient, err := createAIClient(&appCtx.Config)
 		if err != nil {
 			return err
@@ -72,7 +52,7 @@ explicit about the command boundaries.`,
 		defer aiClient.Close()
 		
 		// Explain command using AI
-		ctx := context.Background()
+		ctx := cmd.Context()
 		response, err := aiClient.ExplainCommand(ctx, ai.ExplainRequest{
 			Command: command,
 		})
