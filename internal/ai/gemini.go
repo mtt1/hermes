@@ -122,11 +122,11 @@ Safety Guidelines:
 - ATTENTION: File modifications, system changes, network operations, anything requiring sudo
 
 Important Rules:
-1. Generate the EXACT command needed, no explanations outside the JSON
-2. Commands should be compatible with bash/zsh
-3. Use standard Unix utilities when possible
-4. Be conservative with safety assessment - prefer ATTENTION when uncertain
-5. RESPOND WITH ONLY JSON - NO MARKDOWN, NO BACKTICKS, NO EXTRA TEXT
+1. RESPOND WITH ONLY JSON - NO MARKDOWN, NO CODE BLOCK, NO BACKTICKS, NO EXTRA TEXT
+2. Generate the EXACT command needed, no explanations outside the JSON
+3. Commands should be compatible with bash/zsh
+4. Use standard Unix utilities when possible
+5. Be conservative with safety assessment - prefer ATTENTION when uncertain
 
 User Query: %s`, query)
 }
@@ -148,12 +148,12 @@ Your response MUST be a valid JSON object with exactly this schema:
 }
 
 Structure Guidelines:
+- RESPOND WITH ONLY JSON - NO MARKDOWN, NO CODE BLOCK, NO BACKTICKS, NO EXTRA TEXT
 - Each main command/section gets its own object in the explanation array
 - Put the main description in "text" field
 - Put flag/option explanations in "details" array
 - For piped commands, separate each part into different objects
-- Use clear, educational language
-- RESPOND WITH ONLY JSON - NO MARKDOWN, NO BACKTICKS, NO EXTRA TEXT
+- Use clear, educational language, AND USE AS FEW WORDS AS POSSIBLE
 
 Command to explain: %s`, command)
 }
