@@ -78,7 +78,7 @@ explicit about the command boundaries.`,
 		})
 		
 		if err != nil {
-			return exit.NewError(exit.CodeAPI, "AI command explanation failed: %v", err)
+			return exit.NewError(exit.CodeError, "AI command explanation failed: %v", err)
 		}
 		
 		// Output the explanation

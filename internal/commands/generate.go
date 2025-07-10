@@ -80,7 +80,7 @@ Then you can use: h list all files`,
 		})
 		
 		if err != nil {
-			return exit.NewError(exit.CodeAPI, "AI command generation failed: %v", err)
+			return exit.NewError(exit.CodeError, "AI command generation failed: %v", err)
 		}
 		
 		generatedCommand := response.Command

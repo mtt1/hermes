@@ -52,7 +52,7 @@ Installation:
 		// 	fmt.Print(generateFishScript())
 		// 	return nil
 		default:
-			return exit.NewError(exit.CodeInvalid, "unsupported shell: %s (currently only 'zsh' is supported)", shell)
+			return exit.NewError(exit.CodeError, "unsupported shell: %s (currently only 'zsh' is supported)", shell)
 		}
 	},
 }
@@ -104,7 +104,7 @@ hermes() {
         10)
             # Requires attention - show warning above prompt
             echo ""
-            echo "⚠️  REQUIRES ATTENTION - Potentially destructive action ahead, review before execution"
+            echo "REQUIRES ATTENTION - Potentially destructive action ahead, review before execution"
             echo ""
             print -z "$output"
             ;;
