@@ -65,25 +65,9 @@ explicit about the command boundaries.`,
 		}
 		
 		// Create AI client
-		var aiClient ai.Client
-		var err error
-		
-		if appCtx.Config.MockResponse != "" {
-			// Use mock client when mock response is provided
-			aiClient, err = ai.NewClient("mock", ai.Config{
-				APIKey: "mock-key",
-				Debug:  appCtx.Config.Debug,
-			})
-		} else {
-			// Use Gemini client
-			aiClient, err = ai.NewClient("gemini", ai.Config{
-				APIKey: appCtx.Config.GeminiAPIKey,
-				Debug:  appCtx.Config.Debug,
-			})
-		}
-		
+		aiClient, err := createAIClient(&appCtx.Config)
 		if err != nil {
-			return exit.NewError(exit.CodeError, "Failed to create AI client: %v", err)
+			return err
 		}
 		defer aiClient.Close()
 		
