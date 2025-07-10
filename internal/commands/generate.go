@@ -111,12 +111,11 @@ Then you can use: h list all files`,
 		// Check for shell integration and warn if not active
 		checkShellIntegration()
 		
-		// Return appropriate exit code
+		// Handle exit code
 		if safetyResult.Level.ExitCode() != exit.CodeSuccess {
-			// Return a structured error with the safety code. The empty message is
-			// intentional, as the exit code itself is the signal for shell integration,
-			// and we don't want to print an error message to stderr in this case.
-			return exit.NewError(safetyResult.Level.ExitCode(), "")
+			// For non-success exit codes, we exit directly without error message
+			// The exit code itself is the signal for shell integration
+			os.Exit(safetyResult.Level.ExitCode())
 		}
 		
 		return nil
