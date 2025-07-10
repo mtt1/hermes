@@ -48,8 +48,9 @@ func createAIClient(cfg *config.Config) (ai.Client, error) {
 
 	// Create the new AI client using the determined provider.
 	client, err := ai.NewClient(provider, ai.Config{
-		APIKey: apiKey,
-		Debug:  cfg.Debug,
+		APIKey:       apiKey,
+		Debug:        cfg.Debug,
+		MockResponse: cfg.MockResponse,
 	})
 
 	// If client creation fails, return a structured error.
@@ -84,7 +85,7 @@ func checkShellIntegration() {
 	switch shellName {
 	case "zsh":
 		// Show integration hint for supported shell
-		fmt.Fprintf(os.Stderr, "\n  TIP: Enable shell integration for the best experience!\n")
+		fmt.Fprintf(os.Stderr, "\n   TIP: Enable shell integration for the best experience!\n")
 		fmt.Fprintf(os.Stderr, "   Run: hermes init zsh >> ~/.zshrc && source ~/.zshrc\n")
 		fmt.Fprintf(os.Stderr, "   This allows hermes to put commands directly in your shell buffer.\n")
 		fmt.Fprintf(os.Stderr, "   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")

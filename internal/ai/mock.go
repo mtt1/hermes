@@ -10,6 +10,7 @@ import (
 // MockClient implements the Client interface for testing
 type MockClient struct {
 	config         Config
+	staticCommand  string            // Static command from MockResponse flag
 	responseMap    map[string]string // Query -> Command mapping
 	explanationMap map[string]string // Command -> Explanation mapping
 }
@@ -17,7 +18,8 @@ type MockClient struct {
 // NewMockClient creates a new mock AI client
 func NewMockClient(config Config) (*MockClient, error) {
 	return &MockClient{
-		config: config,
+		config:        config,
+		staticCommand: config.MockResponse, // Use MockResponse as the static command
 		responseMap: map[string]string{
 			"list files":        "ls -la",
 			"list all files":    "ls -la",
@@ -42,6 +44,21 @@ func NewMockClient(config Config) (*MockClient, error) {
 func (m *MockClient) GenerateCommand(ctx context.Context, req GenerateRequest) (*GenerateResponse, error) {
 	if m.config.Debug {
 		fmt.Printf("DEBUG: Mock AI generating command for: %s\n", req.Query)
+	}
+	
+	// Prioritize static command from --mock-response flag
+	if m.staticCommand != "" {
+		// Determine safety level based on command content
+		safetyLevel := safety.Safe
+		if containsDangerousPatterns(m.staticCommand) {
+			safetyLevel = safety.Attention
+		}
+		
+		return &GenerateResponse{
+			Command:     m.staticCommand,
+			SafetyLevel: safetyLevel,
+			Reasoning:   fmt.Sprintf("Mock static response for: %s", req.Query),
+		}, nil
 	}
 	
 	// Check if we have a predefined response
@@ -72,14 +89,15 @@ func (m *MockClient) ExplainCommand(ctx context.Context, req ExplainRequest) (*E
 	if m.config.Debug {
 		fmt.Printf("DEBUG: Mock AI explaining command: %s\n", req.Command)
 	}
-	
+
+
 	// Check if we have a predefined explanation
 	if explanation, exists := m.explanationMap[req.Command]; exists {
 		return &ExplainResponse{
 			Explanation: explanation,
 		}, nil
 	}
-	
+
 	// Default explanation for unknown commands
 	return &ExplainResponse{
 		Explanation: fmt.Sprintf("Mock explanation for command: %s", req.Command),

@@ -43,9 +43,10 @@ type Client interface {
 
 // Config holds configuration for AI clients
 type Config struct {
-	APIKey string // API key for the AI provider
-	Model  string // Model name to use (optional)
-	Debug  bool   // Enable debug logging
+	APIKey       string // API key for the AI provider
+	Model        string // Model name to use (optional)
+	Debug        bool   // Enable debug logging
+	MockResponse string // Mock response for testing
 }
 
 // NewClient creates a new AI client based on the provider type
