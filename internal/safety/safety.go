@@ -65,16 +65,22 @@ func NewAnalyzer() *Analyzer {
 			regexp.MustCompile(`\bsudo\b`),
 			
 			// Dangerous operations
-			regexp.MustCompile(`\brm\s+.*(-[rf]+|--recursive|--force).*\s+/\s*$`), // rm -rf /
+			regexp.MustCompile(`\brm\s+.*(-[rf]+|--recursive|--force)`),           // rm with recursive/force flags
 			regexp.MustCompile(`\bdd\s+.*of=/dev/sd`),                              // dd to disk
 			regexp.MustCompile(`\bmkfs\b`),                                         // format filesystem
 			regexp.MustCompile(`\bfdisk\b`),                                        // disk partitioning
 			regexp.MustCompile(`\bshred\b`),                                        // secure delete
 			regexp.MustCompile(`\bwipe\b`),                                         // secure delete
-			regexp.MustCompile(`\bchmod\s+777`),                                    // dangerous permissions
+			regexp.MustCompile(`\bchmod\s+(.*-R.*\s+)?777`),                        // dangerous permissions (with or without -R)
 			regexp.MustCompile(`>\s*/dev/sd`),                                      // redirect to disk
-			regexp.MustCompile(`\bcurl\s+.*\|\s*sh`),                              // pipe to shell
-			regexp.MustCompile(`\bwget\s+.*\|\s*sh`),                              // pipe to shell
+			regexp.MustCompile(`\bcurl\s+.*\|\s*(sh|bash)`),                        // pipe to shell
+			regexp.MustCompile(`\bwget\s+.*\|\s*(sh|bash)`),                        // pipe to shell
+			regexp.MustCompile(`(sh|bash)\s+-c\s+"?\$\(curl\s+`),                   // sh -c "$(curl ...)"
+			regexp.MustCompile(`(sh|bash)\s+<\(curl\s+`),                           // bash <(curl ...)
+			regexp.MustCompile(`\$\(curl\s+.*\)\s*\|\s*(sh|bash)`),                 // $(curl ...) | sh
+			regexp.MustCompile(`(sh|bash)\s+-c\s+"?\$\(wget\s+`),                   // sh -c "$(wget ...)"
+			regexp.MustCompile(`(sh|bash)\s+<\(wget\s+`),                           // bash <(wget ...)
+			regexp.MustCompile(`\$\(wget\s+.*\)\s*\|\s*(sh|bash)`),                 // $(wget ...) | sh
 			
 			// Commands that typically need sudo (even without sudo keyword)
 			regexp.MustCompile(`\bsystemctl\s+(start|stop|restart|enable|disable)\b`), // service management
