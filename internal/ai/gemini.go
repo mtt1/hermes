@@ -151,6 +151,7 @@ Structure Guidelines:
 - RESPOND WITH ONLY JSON - NO MARKDOWN, NO CODE BLOCK, NO BACKTICKS, NO EXTRA TEXT
 - Each main command/section gets its own object in the explanation array
 - Put the main description in "text" field
+- Lead the "text" field with the command itself, like this: "'ls' lists directory contents." and NOT like this: "The 'ls' command lists..."
 - Put flag/option explanations in "details" array
 - For piped commands, separate each part into different objects
 - Use clear, educational language, AND USE AS FEW WORDS AS POSSIBLE
