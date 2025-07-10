@@ -69,19 +69,31 @@ hermes() {
         return
     fi
     
-    # If it's a subcommand (gen, exp, init), pass through directly
-    case "$1" in
-        gen|generate|exp|explain|init|--help|-h|--version|-v)
-            command hermes "$@"
-            return $?
-            ;;
-    esac
+    # Check if this is a generation request (needs buffer placement)
+    # Look for 'gen' or 'generate' subcommand in arguments
+    local is_generation=false
+    for arg in "$@"; do
+        case "$arg" in
+            gen|generate)
+                is_generation=true
+                break
+                ;;
+        esac
+    done
     
-    # Otherwise, treat it as natural language for generation
+    # If it's NOT a generation command, pass through directly
+    if [[ "$is_generation" = false ]]; then
+        HERMES_SHELL_INTEGRATION=1 command hermes "$@"
+        return $?
+    fi
+    
+    # Otherwise, it's a generation command - capture output for buffer
     local output exit_code
     
     # Capture both stdout and exit code
-    output=$(command hermes gen "$@" 2>/dev/null)
+    # Set HERMES_SHELL_INTEGRATION=1 to indicate we're running from shell integration
+    # Note: stderr goes directly to terminal for immediate feedback
+    output=$(HERMES_SHELL_INTEGRATION=1 command hermes "$@")
     exit_code=$?
     
     case $exit_code in
@@ -99,7 +111,7 @@ hermes() {
             ;;
         *)
             # Error condition - show error message
-            command hermes gen "$@"
+            HERMES_SHELL_INTEGRATION=1 command hermes "$@"
             return $exit_code
             ;;
     esac

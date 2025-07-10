@@ -4,6 +4,8 @@ package commands
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -49,7 +51,9 @@ Then you can use: h list all files`,
 		}
 
 		query := strings.Join(args, " ")
-		fmt.Printf("Generating command for: '%s'\n", query)
+		
+		// Show immediate feedback about what we're processing (to stderr)
+		fmt.Fprintf(os.Stderr, "└─ Generating command for: '%s'\n", query)
 		
 		if appCtx.Config.Debug {
 			apiKey := appCtx.Config.GeminiAPIKey
@@ -131,15 +135,18 @@ Then you can use: h list all files`,
 			}
 		}
 		
+		// Output only the command (for shell buffer)
+		fmt.Printf("%s\n", generatedCommand)
+		
 		if appCtx.Config.Debug {
 			fmt.Printf("DEBUG: Generated command: %s\n", generatedCommand)
+			fmt.Printf("DEBUG: Safety level: %s\n", safetyResult.Level)
 			fmt.Printf("DEBUG: Safety analysis: %s (reason: %s, layer: %s)\n", 
 				safetyResult.Level, safetyResult.Reason, safetyResult.Layer)
 		}
 		
-		// Output the generated command
-		fmt.Printf("Generated command: %s\n", generatedCommand)
-		fmt.Printf("Safety level: %s\n", safetyResult.Level)
+		// Check for shell integration and warn if not active
+		checkShellIntegration()
 		
 		// Return appropriate exit code
 		if safetyResult.Level.ExitCode() != exit.CodeSuccess {
@@ -148,6 +155,40 @@ Then you can use: h list all files`,
 		
 		return nil
 	},
+}
+
+// checkShellIntegration detects if hermes shell integration is active and warns if not
+func checkShellIntegration() {
+	// Check if we're running from the hermes shell function
+	// The shell function sets HERMES_SHELL_INTEGRATION=1 when calling hermes
+	if os.Getenv("HERMES_SHELL_INTEGRATION") == "1" {
+		return // Shell integration is active
+	}
+	
+	// Check if user wants to suppress the tip
+	if os.Getenv("HERMES_SUPPRESS_INTEGRATION_TIP") == "1" {
+		return // User has chosen to suppress the tip
+	}
+	
+	// Check if we're in an interactive shell that could benefit from integration
+	shellPath := os.Getenv("SHELL")
+	if shellPath == "" {
+		return // No shell detected, probably running in a script
+	}
+	
+	// Only show tip for shells we actually support
+	shellName := filepath.Base(shellPath)
+	switch shellName {
+	case "zsh":
+		// Show integration hint for supported shell
+		fmt.Printf("\n💡 TIP: Enable shell integration for the best experience!\n")
+		fmt.Printf("   Run: hermes init zsh >> ~/.zshrc && source ~/.zshrc\n")
+		fmt.Printf("   This allows hermes to put commands directly in your shell buffer.\n")
+		fmt.Printf("   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
+	default:
+		// For unsupported shells, show no tip (future expansion point)
+		return
+	}
 }
 
 func init() {
