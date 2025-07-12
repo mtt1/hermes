@@ -24,6 +24,10 @@ func Success() Error {
 
 // NewError creates a new error with a specific code.
 func NewError(code int, format string, a ...interface{}) Error {
+	if format == "" {
+		// Clean exit - no error message (for cases like dangerous command detection)
+		return Error{Code: code, Err: nil}
+	}
 	return Error{Code: code, Err: fmt.Errorf(format, a...)}
 }
 

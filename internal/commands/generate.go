@@ -113,9 +113,8 @@ Then you can use: h list all files`,
 		
 		// Handle exit code
 		if safetyResult.Level.ExitCode() != exit.CodeSuccess {
-			// For non-success exit codes, we exit directly without error message
-			// The exit code itself is the signal for shell integration
-			os.Exit(safetyResult.Level.ExitCode())
+			// Return clean error for shell integration - no error message, just exit code
+			return exit.NewError(safetyResult.Level.ExitCode(), "")
 		}
 		
 		return nil

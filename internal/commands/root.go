@@ -46,6 +46,10 @@ Configuration:
   - Environment variable: GEMINI_API_KEY
   - CLI flag: --gemini-api-key
   - Config file: ~/.config/hermes/config.toml`,
+
+	// Centralized error handling: main.go controls all error output
+	SilenceErrors: true,
+	SilenceUsage:  true,
 	
 	// Load configuration before any command runs
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
