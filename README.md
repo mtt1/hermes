@@ -15,30 +15,30 @@ Hermes translates natural language into shell commands. Say what you want, get t
 ## Usage
 
 ```bash
-hermes list all files
+hermes gen list all files
 hermes gen find python files
 hermes generate "delete old logs"
-hermes gen -- compress this directory
 # All generate the appropriate commands
 
 hermes gen --verbose find python files
-hermes gen -v "delete old logs"
+hermes gen -v delete old logs
 # Shows explanation + generates command
 
-hermes exp ls -la
+hermes exp ls
+hermes exp -- ls -la
 hermes explain "grep -r pattern ."
 # Explains what commands do
 ```
 
 The generated command appears in your shell buffer. Review it before pressing enter.
 
+Dangerous commands show warnings. You always have final control.
+
 ## Commands
 
-- `hermes [gen|generate] <description>` - Generate a command (quotes or `--` for complex descriptions)
+- `hermes [gen|generate] <description>` - Generate a command
 - `hermes [gen|generate] --verbose/-v <description>` - Generate command with detailed explanation
-- `hermes [exp|explain] <command>` - Explain what a command does  
+- `hermes [exp|explain] <command>` - Explain what a command does (quotes or `--` for complex descriptions)
 - `hermes init zsh` - Print shell integration code
 - `hermes --help` - Show help
 - `hermes --version` - Show version
-
-Dangerous commands show warnings. You always have final control.
