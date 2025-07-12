@@ -1,1 +1,39 @@
-# Hermes - AI assistant in your terminal
+# Hermes
+
+Hermes translates natural language into shell commands. Say what you want, get the command ready to run.
+
+## Setup
+
+1. Get a Gemini API key from Google AI Studio
+2. Build: `go build -o hermes cmd/hermes/main.go`
+3. Add to your shell: `echo 'eval "$(./hermes init zsh)"' >> ~/.zshrc && source ~/.zshrc`
+4. Set your API key:
+   - Environment variable: `export GEMINI_API_KEY=your_key_here`
+   - CLI flag: `--gemini-api-key your_key_here`
+   - Config file: `~/.config/hermes/config.toml`
+
+## Usage
+
+```bash
+hermes list all files
+hermes gen find python files
+hermes generate "delete old logs"
+hermes gen -- compress this directory
+# All generate the appropriate commands
+
+hermes exp ls -la
+hermes explain "grep -r pattern ."
+# Explains what commands do
+```
+
+The generated command appears in your shell buffer. Review it before pressing enter.
+
+## Commands
+
+- `hermes [gen|generate] <description>` - Generate a command (quotes or `--` for complex descriptions)
+- `hermes [exp|explain] <command>` - Explain what a command does  
+- `hermes init zsh` - Print shell integration code
+- `hermes --help` - Show help
+- `hermes --version` - Show version
+
+Dangerous commands show warnings. You always have final control.
