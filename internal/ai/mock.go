@@ -90,6 +90,12 @@ func (m *MockClient) ExplainCommand(ctx context.Context, req ExplainRequest) (*E
 		fmt.Printf("DEBUG: Mock AI explaining command: %s\n", req.Command)
 	}
 
+	// Prioritize static response from --mock-response flag
+	if m.staticCommand != "" {
+		return &ExplainResponse{
+			Explanation: m.staticCommand,
+		}, nil
+	}
 
 	// Check if we have a predefined explanation
 	if explanation, exists := m.explanationMap[req.Command]; exists {
