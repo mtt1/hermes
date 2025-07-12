@@ -40,6 +40,7 @@ Then you can use: h list all files`,
 
 	Args: cobra.MinimumNArgs(1), // Require at least one argument
 	RunE: func(cmd *cobra.Command, args []string) error {
+		verbose, _ := cmd.Flags().GetBool("verbose")
 		query := strings.Join(args, " ")
 		
 		// Show immediate feedback about what we're processing (to stderr)
@@ -55,7 +56,8 @@ Then you can use: h list all files`,
 		// Generate command using AI
 		ctx := cmd.Context()
 		response, err := aiClient.GenerateCommand(ctx, ai.GenerateRequest{
-			Query: query,
+			Query:   query,
+			Verbose: verbose,
 		})
 		
 		if err != nil {
@@ -64,6 +66,11 @@ Then you can use: h list all files`,
 		
 		generatedCommand := response.Command
 		aiSafetyLevel := response.SafetyLevel
+		
+		// Display verbose explanation if requested (to stderr)
+		if verbose {
+			fmt.Fprintf(os.Stderr, "\nExplanation:\n%s\n\n", response.Explanation)
+		}
 		
 		// Analyze safety of generated command (hybrid approach)
 		analyzer := safety.NewAnalyzer()
@@ -123,4 +130,5 @@ Then you can use: h list all files`,
 
 func init() {
 	rootCmd.AddCommand(generateCmd)
+	generateCmd.Flags().BoolP("verbose", "v", false, "Show detailed explanation of the generated command")
 }

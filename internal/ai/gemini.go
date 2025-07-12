@@ -11,6 +11,15 @@ import (
 	"hermes/internal/safety"
 )
 
+const explainPromptGuidelines = `
+Explanation Format Guidelines:
+- Each main command/section gets its own object in the explanation array
+- Put the main description in "text" field
+- Lead the "text" field with the command itself, like this: "'ls' lists directory contents." and NOT like this: "The 'ls' command lists..."
+- Put flag/option explanations in "details" array
+- For piped commands, separate each part into different objects
+- Use clear, educational language, AND USE AS FEW WORDS AS POSSIBLE`
+
 // GeminiClient implements the Client interface for Google's Gemini API
 type GeminiClient struct {
 	config Config
@@ -19,9 +28,9 @@ type GeminiClient struct {
 
 // geminiResponse represents the structured JSON response from Gemini API
 type geminiResponse struct {
-	Command     string `json:"command"`
-	Safety      string `json:"safety"`
-	Explanation string `json:"explanation"`
+	Command              string                 `json:"command"`
+	Safety               string                 `json:"safety"`
+	Explanation          interface{}            `json:"explanation"` // Can be string or []ExplanationSection
 }
 
 // ExplanationSection represents a section of the structured explanation
@@ -52,7 +61,7 @@ func NewGeminiClient(config Config) (*GeminiClient, error) {
 
 // GenerateCommand generates a shell command from natural language
 func (g *GeminiClient) GenerateCommand(ctx context.Context, req GenerateRequest) (*GenerateResponse, error) {
-	prompt := g.buildGeneratePrompt(req.Query)
+	prompt := g.buildGeneratePrompt(req.Query, req.Verbose)
 	
 	// Select model - use Flash for speed, Pro for quality
 	modelName := "gemini-2.5-flash"
@@ -105,7 +114,20 @@ func (g *GeminiClient) Close() error {
 }
 
 // buildGeneratePrompt creates the prompt for command generation
-func (g *GeminiClient) buildGeneratePrompt(query string) string {
+func (g *GeminiClient) buildGeneratePrompt(query string, verbose bool) string {
+	explanationFormat := `"<brief explanation of the command and safety reasoning>"`
+	extraGuidelines := ""
+	
+	if verbose {
+		explanationFormat = `[
+    {
+      "text": "main command or section description",
+      "details": ["flag explanations", "option explanations"]
+    }
+  ]`
+		extraGuidelines = explainPromptGuidelines + "\n"
+	}
+
 	return fmt.Sprintf(`You are an expert system administrator that translates natural language queries into shell commands.
 
 CRITICAL: Your response MUST be ONLY a valid JSON object. Do NOT wrap it in markdown code blocks. Do NOT add any text before or after the JSON.
@@ -114,10 +136,10 @@ Your response MUST be a valid JSON object with exactly this schema:
 {
   "command": "<the generated shell command>",
   "safety": "<SAFE | ATTENTION>",
-  "explanation": "<brief explanation of the command and safety reasoning>"
+  "explanation": %s
 }
 
-Safety Guidelines:
+%sSafety Guidelines:
 - SAFE: Read-only operations, basic file listing, navigation, help commands
 - ATTENTION: File modifications, system changes, network operations, anything requiring sudo
 
@@ -128,7 +150,7 @@ Important Rules:
 4. Use standard Unix utilities when possible
 5. Be conservative with safety assessment - prefer ATTENTION when uncertain
 
-User Query: %s`, query)
+User Query: %s`, explanationFormat, extraGuidelines, query)
 }
 
 // buildExplainPrompt creates the prompt for command explanation
@@ -148,13 +170,7 @@ Your response MUST be a valid JSON object with exactly this schema:
 }
 
 Structure Guidelines:
-- RESPOND WITH ONLY JSON - NO MARKDOWN, NO CODE BLOCK, NO BACKTICKS, NO EXTRA TEXT
-- Each main command/section gets its own object in the explanation array
-- Put the main description in "text" field
-- Lead the "text" field with the command itself, like this: "'ls' lists directory contents." and NOT like this: "The 'ls' command lists..."
-- Put flag/option explanations in "details" array
-- For piped commands, separate each part into different objects
-- Use clear, educational language, AND USE AS FEW WORDS AS POSSIBLE
+- RESPOND WITH ONLY JSON - NO MARKDOWN, NO CODE BLOCK, NO BACKTICKS, NO EXTRA TEXT` + explainPromptGuidelines + `
 
 Command to explain: %s`, command)
 }
@@ -214,10 +230,44 @@ func (g *GeminiClient) parseGenerateResponse(resp *genai.GenerateContentResponse
 		safetyLevel = safety.Attention // Default to attention for unknown values
 	}
 
+	// Handle explanation - could be string (simple) or array (verbose)
+	var reasoning, explanation string
+	switch exp := geminiResp.Explanation.(type) {
+	case string:
+		// Simple explanation
+		reasoning = exp
+		explanation = exp
+	case []interface{}:
+		// Verbose explanation - parse as ExplanationSection array and format
+		var sections []ExplanationSection
+		for _, item := range exp {
+			if sectionMap, ok := item.(map[string]interface{}); ok {
+				section := ExplanationSection{}
+				if text, hasText := sectionMap["text"].(string); hasText {
+					section.Text = text
+				}
+				if details, hasDetails := sectionMap["details"].([]interface{}); hasDetails {
+					for _, detail := range details {
+						if detailStr, ok := detail.(string); ok {
+							section.Details = append(section.Details, detailStr)
+						}
+					}
+				}
+				sections = append(sections, section)
+			}
+		}
+		explanation = g.formatExplanation(sections)
+		reasoning = "Verbose explanation provided"
+	default:
+		reasoning = "Unknown explanation format"
+		explanation = "Unknown explanation format"
+	}
+
 	return &GenerateResponse{
 		Command:     geminiResp.Command,
 		SafetyLevel: safetyLevel,
-		Reasoning:   geminiResp.Explanation,
+		Reasoning:   reasoning,
+		Explanation: explanation,
 	}, nil
 }
 

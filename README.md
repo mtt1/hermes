@@ -21,6 +21,10 @@ hermes generate "delete old logs"
 hermes gen -- compress this directory
 # All generate the appropriate commands
 
+hermes gen --verbose find python files
+hermes gen -v "delete old logs"
+# Shows explanation + generates command
+
 hermes exp ls -la
 hermes explain "grep -r pattern ."
 # Explains what commands do
@@ -31,6 +35,7 @@ The generated command appears in your shell buffer. Review it before pressing en
 ## Commands
 
 - `hermes [gen|generate] <description>` - Generate a command (quotes or `--` for complex descriptions)
+- `hermes [gen|generate] --verbose/-v <description>` - Generate command with detailed explanation
 - `hermes [exp|explain] <command>` - Explain what a command does  
 - `hermes init zsh` - Print shell integration code
 - `hermes --help` - Show help

@@ -9,7 +9,8 @@ import (
 
 // GenerateRequest represents a request for command generation
 type GenerateRequest struct {
-	Query string // Natural language query from user
+	Query   string // Natural language query from user
+	Verbose bool   // Whether to include detailed explanation
 }
 
 // GenerateResponse represents the response from AI command generation
@@ -17,6 +18,7 @@ type GenerateResponse struct {
 	Command     string              // Generated shell command
 	SafetyLevel safety.SafetyLevel  // AI's assessment of command safety
 	Reasoning   string              // Optional explanation of the generated command (for --explain-generation flag)
+	Explanation string              // Detailed explanation when verbose mode is requested
 }
 
 // ExplainRequest represents a request for command explanation

@@ -139,9 +139,9 @@ func (a *Analyzer) AnalyzeCommand(ctx context.Context, command string) (Result, 
 		}
 	}
 	
-	// Layer 3: AI Analysis (For Ambiguous Cases)
-	// TODO: Phase 2 - Implement AI-based safety analysis
-	// For now, default to safe for ambiguous cases
+	// Layer 3: Default Safe (AI analysis handled in generate command)
+	// Commands that pass pattern matching default to safe
+	// AI-based safety analysis is implemented at the command level
 	return Result{
 		Level:  Safe,
 		Reason: "Command passed basic safety checks (AI analysis not yet implemented)",

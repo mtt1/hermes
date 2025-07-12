@@ -54,10 +54,16 @@ func (m *MockClient) GenerateCommand(ctx context.Context, req GenerateRequest) (
 			safetyLevel = safety.Attention
 		}
 		
+		explanation := fmt.Sprintf("Mock explanation for: %s", m.staticCommand)
+		if req.Verbose {
+			explanation = fmt.Sprintf("• '%s' mock command demonstration\n  • Generated from mock response flag\n  • This is a test explanation with bullet points", m.staticCommand)
+		}
+		
 		return &GenerateResponse{
 			Command:     m.staticCommand,
 			SafetyLevel: safetyLevel,
 			Reasoning:   fmt.Sprintf("Mock static response for: %s", req.Query),
+			Explanation: explanation,
 		}, nil
 	}
 	
@@ -69,18 +75,31 @@ func (m *MockClient) GenerateCommand(ctx context.Context, req GenerateRequest) (
 			safetyLevel = safety.Attention
 		}
 		
+		explanation := fmt.Sprintf("Mock explanation for: %s", command)
+		if req.Verbose {
+			explanation = fmt.Sprintf("• '%s' command explanation\n  • This is a predefined mock response\n  • Generated from query: %s", command, req.Query)
+		}
+		
 		return &GenerateResponse{
 			Command:     command,
 			SafetyLevel: safetyLevel,
 			Reasoning:   fmt.Sprintf("Mock reasoning for: %s", req.Query),
+			Explanation: explanation,
 		}, nil
 	}
 	
 	// Default response for unknown queries
+	defaultCommand := fmt.Sprintf("echo 'Mock command for: %s'", req.Query)
+	explanation := fmt.Sprintf("Mock explanation for: %s", defaultCommand)
+	if req.Verbose {
+		explanation = fmt.Sprintf("• '%s' default mock command\n  • Generated for unknown query\n  • Query was: %s", defaultCommand, req.Query)
+	}
+	
 	return &GenerateResponse{
-		Command:     fmt.Sprintf("echo 'Mock command for: %s'", req.Query),
+		Command:     defaultCommand,
 		SafetyLevel: safety.Safe,
 		Reasoning:   "Mock default response",
+		Explanation: explanation,
 	}, nil
 }
 
