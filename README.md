@@ -6,7 +6,14 @@ Hermes translates natural language into shell commands. Say what you want, get t
 
 1. Get a Gemini API key from Google AI Studio
 2. Build: `go build -o hermes cmd/hermes/main.go`
-3. Add to your shell: `echo 'eval "$(./hermes init zsh)"' >> ~/.zshrc && source ~/.zshrc`
+3. Add to your shell:
+   
+   **Zsh:** `echo 'eval "$(./hermes init zsh)"' >> ~/.zshrc && source ~/.zshrc`
+   
+   **Bash:** `echo 'eval "$(./hermes init bash)"' >> ~/.bashrc && source ~/.bashrc`
+   
+   **Fish:** `mkdir -p ~/.config/fish/functions && ./hermes init fish > ~/.config/fish/functions/hermes.fish`
+
 4. Set your API key:
    - Environment variable: `export GEMINI_API_KEY=your_key_here`
    - CLI flag: `--gemini-api-key your_key_here`
@@ -39,6 +46,6 @@ Dangerous commands show warnings. You always have final control.
 - `hermes [gen|generate] <description>` - Generate a command
 - `hermes [gen|generate] --verbose/-v <description>` - Generate command with detailed explanation
 - `hermes [exp|explain] <command>` - Explain what a command does (quotes or `--` for complex descriptions)
-- `hermes init zsh` - Print shell integration code
+- `hermes init [zsh|bash|fish]` - Print shell integration code
 - `hermes --help` - Show help
 - `hermes --version` - Show version

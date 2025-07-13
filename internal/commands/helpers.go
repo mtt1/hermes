@@ -84,13 +84,26 @@ func checkShellIntegration() {
 	shellName := filepath.Base(shellPath)
 	switch shellName {
 	case "zsh":
-		// Show integration hint for supported shell
+		// Show integration hint for zsh
 		fmt.Fprintf(os.Stderr, "\n   TIP: Enable shell integration for the best experience!\n")
-		fmt.Fprintf(os.Stderr, "   Run: hermes init zsh >> ~/.zshrc && source ~/.zshrc\n")
+		fmt.Fprintf(os.Stderr, "   Run: eval \"$(hermes init zsh)\" >> ~/.zshrc && source ~/.zshrc\n")
+		fmt.Fprintf(os.Stderr, "   This allows hermes to put commands directly in your shell buffer.\n")
+		fmt.Fprintf(os.Stderr, "   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
+	case "bash":
+		// Show integration hint for bash
+		fmt.Fprintf(os.Stderr, "\n   TIP: Enable shell integration for the best experience!\n")
+		fmt.Fprintf(os.Stderr, "   Run: eval \"$(hermes init bash)\" >> ~/.bashrc && source ~/.bashrc\n")
+		fmt.Fprintf(os.Stderr, "   This allows hermes to put commands directly in your shell buffer.\n")
+		fmt.Fprintf(os.Stderr, "   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
+	case "fish":
+		// Show integration hint for fish (different installation pattern)
+		fmt.Fprintf(os.Stderr, "\n   TIP: Enable shell integration for the best experience!\n")
+		fmt.Fprintf(os.Stderr, "   Run: mkdir -p ~/.config/fish/functions\n")
+		fmt.Fprintf(os.Stderr, "        hermes init fish > ~/.config/fish/functions/hermes.fish\n")
 		fmt.Fprintf(os.Stderr, "   This allows hermes to put commands directly in your shell buffer.\n")
 		fmt.Fprintf(os.Stderr, "   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
 	default:
-		// For unsupported shells, show no tip (future expansion point)
+		// For unsupported shells, show no tip
 		return
 	}
 }
