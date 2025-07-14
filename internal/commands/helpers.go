@@ -96,10 +96,9 @@ func checkShellIntegration() {
 		fmt.Fprintf(os.Stderr, "   This allows hermes to put commands directly in your shell buffer.\n")
 		fmt.Fprintf(os.Stderr, "   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
 	case "fish":
-		// Show integration hint for fish (different installation pattern)
+		// Show integration hint for fish
 		fmt.Fprintf(os.Stderr, "\n   TIP: Enable shell integration for the best experience!\n")
-		fmt.Fprintf(os.Stderr, "   Run: mkdir -p ~/.config/fish/functions\n")
-		fmt.Fprintf(os.Stderr, "        hermes init fish > ~/.config/fish/functions/hermes.fish\n")
+		fmt.Fprintf(os.Stderr, "   Run: echo 'hermes init fish | source' >> ~/.config/fish/config.fish\n")
 		fmt.Fprintf(os.Stderr, "   This allows hermes to put commands directly in your shell buffer.\n")
 		fmt.Fprintf(os.Stderr, "   To suppress this tip: export HERMES_SUPPRESS_INTEGRATION_TIP=1\n\n")
 	default:

@@ -12,7 +12,7 @@ Hermes translates natural language into shell commands. Say what you want, get t
    
    **Bash:** `echo 'eval "$(./hermes init bash)"' >> ~/.bashrc && source ~/.bashrc`
    
-   **Fish:** `mkdir -p ~/.config/fish/functions && ./hermes init fish > ~/.config/fish/functions/hermes.fish`
+   **Fish:** `echo './hermes init fish | source' >> ~/.config/fish/config.fish`
 
 4. Set your API key:
    - Environment variable: `export GEMINI_API_KEY=your_key_here`

@@ -37,9 +37,8 @@ Installation:
   For bash - Add to ~/.bashrc:
     eval "$(hermes init bash)"
     
-  For fish - Save function to functions directory:
-    mkdir -p ~/.config/fish/functions
-    hermes init fish > ~/.config/fish/functions/hermes.fish
+  For fish - Add to ~/.config/fish/config.fish:
+    hermes init fish | source
     
   Then restart your shell or reload config.`,
 	
